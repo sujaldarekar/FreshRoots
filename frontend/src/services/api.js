@@ -3,6 +3,11 @@ import axios from 'axios';
 const normalizeBaseUrl = (value) => value.replace(/\/$/, '');
 
 const resolveApiBaseUrl = () => {
+  // Safety net for Render deploys: always use backend service from web service host.
+  if (typeof window !== 'undefined' && window.location?.hostname === 'freshroots-web.onrender.com') {
+    return 'https://freshroots-api.onrender.com/api';
+  }
+
   if (import.meta.env.VITE_API_URL) {
     return normalizeBaseUrl(import.meta.env.VITE_API_URL);
   }
