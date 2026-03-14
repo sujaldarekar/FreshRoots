@@ -33,7 +33,7 @@ services:
     name: freshroots-web
     rootDir: frontend
     buildCommand: npm ci && npm run build
-    staticPublishPath: frontend/dist
+    staticPublishPath: dist
     autoDeployTrigger: commit
     envVars:
       - key: NODE_VERSION
