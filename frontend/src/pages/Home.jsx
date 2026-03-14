@@ -123,21 +123,7 @@ export default function Home() {
                 </Link>
               )}
             </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-8 grid grid-cols-2 gap-3 max-w-xl"
-            >
-              <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur px-4 py-4">
-                <div className="text-2xl font-bold text-white">100%</div>
-                <div className="text-sm text-green-100">mobile-ready shopping flow</div>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur px-4 py-4">
-                <div className="text-2xl font-bold text-white">24/7</div>
-                <div className="text-sm text-green-100">local produce access</div>
-              </div>
-            </motion.div>
+
           </div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
