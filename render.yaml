@@ -1,7 +1,7 @@
 services:
   - type: web
     runtime: node
-    name: freshroots-api
+    name: freshroots-api-v2
     plan: free
     rootDir: backend
     buildCommand: npm ci
@@ -24,13 +24,13 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
       - key: FRONTEND_URL
-        value: https://freshroots-web.onrender.com
+        value: https://freshroots-web-v2.onrender.com
       - key: CORS_ALLOWED_ORIGINS
-        value: https://freshroots-web.onrender.com
+        value: https://freshroots-web-v2.onrender.com
 
   - type: web
     runtime: static
-    name: freshroots-web
+    name: freshroots-web-v2
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
@@ -39,7 +39,7 @@ services:
       - key: NODE_VERSION
         value: 22
       - key: VITE_API_URL
-        value: https://freshroots-api.onrender.com/api
+        value: https://freshroots-api-v2.onrender.com/api
     routes:
       - type: rewrite
         source: /*

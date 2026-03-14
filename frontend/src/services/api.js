@@ -4,8 +4,10 @@ const normalizeBaseUrl = (value) => value.replace(/\/$/, '');
 
 const resolveApiBaseUrl = () => {
   // Safety net for Render deploys: always use backend service from web service host.
-  if (typeof window !== 'undefined' && window.location?.hostname === 'freshroots-web.onrender.com') {
-    return 'https://freshroots-api.onrender.com/api';
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const host = window.location.hostname;
+    if (host === 'freshroots-web.onrender.com') return 'https://freshroots-api.onrender.com/api';
+    if (host === 'freshroots-web-v2.onrender.com') return 'https://freshroots-api-v2.onrender.com/api';
   }
 
   if (import.meta.env.VITE_API_URL) {
