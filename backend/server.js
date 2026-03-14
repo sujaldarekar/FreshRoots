@@ -10,6 +10,8 @@ dotenv.config();
 const app = express();
 
 const defaultOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const renderWebOriginPattern = /^https:\/\/freshroots-web(?:-[a-z0-9-]+)?\.onrender\.com$/i;
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   ...(process.env.CORS_ALLOWED_ORIGINS || '').split(',').map((origin) => origin.trim()),
@@ -18,7 +20,9 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    const isAllowedRenderOrigin = !!origin && renderWebOriginPattern.test(origin);
+
+    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin) || isAllowedRenderOrigin) {
       return callback(null, true);
     }
 
