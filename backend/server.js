@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 
 const defaultOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
-const renderWebOriginPattern = /^https:\/\/freshroots-web(?:-[a-z0-9-]+)?\.onrender\.com$/i;
+const renderWebOriginPattern = /^https:\/\/[a-z0-9-]*freshroots-web[a-z0-9-]*\.onrender\.com$/i;
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
