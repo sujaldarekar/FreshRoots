@@ -145,6 +145,9 @@ const rateFarmer = async (req, res) => {
 
     res.json({ message: 'Rating submitted', averageRating: Math.round(avg * 10) / 10 });
   } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid farmer id' });
+    }
     res.status(500).json({ message: error.message });
   }
 };

@@ -53,9 +53,9 @@ const ProductCard = ({ product, distance, onQuickView }) => {
       exit={{ opacity: 0, y: -20 }}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.25 }}
-      className="surface-card overflow-hidden group cursor-pointer hover:shadow-card-hover transition-shadow duration-300"
+      className="surface-card overflow-hidden group hover:shadow-card-hover transition-shadow duration-300"
     >
-      <Link to={`/product/${product._id}`}>
+      <div>
         {/* Image */}
         <div className="relative overflow-hidden aspect-[4/3] bg-gray-50">
           <motion.img
@@ -92,7 +92,6 @@ const ProductCard = ({ product, distance, onQuickView }) => {
               whileHover={{ opacity: 1, y: 0 }}
               className="opacity-0 group-hover:opacity-100 bg-white text-primary text-xs font-semibold px-3 py-1.5 rounded-full shadow-soft transition-all duration-200"
               onClick={(e) => {
-                e.preventDefault();
                 onQuickView && onQuickView(product);
               }}
             >
@@ -147,23 +146,31 @@ const ProductCard = ({ product, distance, onQuickView }) => {
                 </div>
               )}
             </div>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleAddToCart}
-              disabled={product.quantity === 0}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                inCart
-                  ? 'bg-primary text-white shadow-green'
-                  : product.quantity === 0
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-[#20dc3e] text-[#0f2e17] hover:bg-[#18c535]'
-              }`}
-            >
-              {product.quantity === 0 ? 'Out' : inCart ? 'Added' : 'Add to Cart'}
-            </motion.button>
+            <div className="flex items-center gap-2">
+              <Link
+                to={`/product/${product._id}`}
+                className="px-3 py-2 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-700 hover:border-primary hover:text-primary transition-colors"
+              >
+                View
+              </Link>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleAddToCart}
+                disabled={product.quantity === 0}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                  inCart
+                    ? 'bg-primary text-white shadow-green'
+                    : product.quantity === 0
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-[#20dc3e] text-[#0f2e17] hover:bg-[#18c535]'
+                }`}
+              >
+                {product.quantity === 0 ? 'Out' : inCart ? 'Added' : 'Add'}
+              </motion.button>
+            </div>
           </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 };

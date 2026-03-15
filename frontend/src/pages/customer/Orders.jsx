@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { fetchMyOrders } from '../../redux/slices/orderSlice';
-import { farmerAPI } from '../../services/api';
+import { farmerAPI, productAPI } from '../../services/api';
 import ModalPopup from '../../components/common/ModalPopup';
 import { SkeletonRow } from '../../components/common/SkeletonCard';
 
@@ -23,6 +23,7 @@ export default function Orders() {
   const { myOrders, isLoading } = useSelector((s) => s.orders);
   const [expanded, setExpanded] = useState(null);
   const [rateModal, setRateModal] = useState(null); // { farmerId, orderId }
+  const [productRateModal, setProductRateModal] = useState(null); // { productId, orderId, productName }
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState('');
   const [rating_loading, setRatingLoading] = useState(false);
@@ -33,6 +34,10 @@ export default function Orders() {
 
   const handleRateSubmit = async () => {
     if (!rateModal) return;
+    if (!rateModal.farmerId) {
+      toast.error('Farmer id is missing for this order');
+      return;
+    }
     setRatingLoading(true);
     try {
       await farmerAPI.rate(rateModal.farmerId, { rating, review, orderId: rateModal.orderId });
@@ -40,8 +45,32 @@ export default function Orders() {
       setRateModal(null);
       setRating(5);
       setReview('');
-    } catch {
-      toast.error('Failed to submit rating');
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to submit rating');
+    } finally {
+      setRatingLoading(false);
+    }
+  };
+
+  const handleProductRateSubmit = async () => {
+    if (!productRateModal) return;
+    if (!productRateModal.productId) {
+      toast.error('Product id is missing for this order item');
+      return;
+    }
+    setRatingLoading(true);
+    try {
+      await productAPI.rate(productRateModal.productId, {
+        rating,
+        review,
+        orderId: productRateModal.orderId,
+      });
+      toast.success('Product rating submitted!');
+      setProductRateModal(null);
+      setRating(5);
+      setReview('');
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to submit product rating');
     } finally {
       setRatingLoading(false);
     }
@@ -137,10 +166,33 @@ export default function Orders() {
                                   key={pi}
                                   className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2 text-sm"
                                 >
-                                  <span className="text-gray-700">
-                                    {p.productName} × {p.quantity}
-                                  </span>
-                                  <span className="font-semibold text-gray-800">
+                                  <div className="min-w-0">
+                                    <span className="text-gray-700 block truncate">
+                                      {p.productName} × {p.quantity}
+                                    </span>
+                                    {order.orderStatus === 'Delivered' && p.productId && (
+                                      <button
+                                        onClick={() => {
+                                          const resolvedProductId =
+                                            typeof p.productId === 'object' ? p.productId?._id : p.productId;
+                                          if (!resolvedProductId) {
+                                            toast.error('Unable to find product id for rating');
+                                            return;
+                                          }
+
+                                          setProductRateModal({
+                                            productId: resolvedProductId,
+                                            orderId: order._id,
+                                            productName: p.productName,
+                                          });
+                                        }}
+                                        className="mt-1 text-xs text-accent font-semibold hover:underline"
+                                      >
+                                        ⭐ Rate Product
+                                      </button>
+                                    )}
+                                  </div>
+                                  <span className="font-semibold text-gray-800 ml-3">
                                     ₹{p.price * p.quantity}
                                   </span>
                                 </div>
@@ -175,7 +227,15 @@ export default function Orders() {
                                 {uniqueFarmerIds.map((fid) => (
                                   <button
                                     key={fid}
-                                    onClick={() => setRateModal({ farmerId: fid, orderId: order._id })}
+                                    onClick={() => {
+                                      const resolvedFarmerId =
+                                        typeof fid === 'object' ? fid?._id : fid;
+                                      if (!resolvedFarmerId) {
+                                        toast.error('Unable to find farmer id for rating');
+                                        return;
+                                      }
+                                      setRateModal({ farmerId: resolvedFarmerId, orderId: order._id });
+                                    }}
                                     className="text-xs bg-accent/10 text-accent hover:bg-accent/20 font-semibold px-3 py-1.5 rounded-lg transition-colors"
                                   >
                                     ⭐ Rate Farmer
@@ -235,6 +295,49 @@ export default function Orders() {
             className="btn-primary w-full"
           >
             {rating_loading ? 'Submitting…' : 'Submit Rating'}
+          </button>
+        </div>
+      </ModalPopup>
+
+      <ModalPopup
+        isOpen={!!productRateModal}
+        onClose={() => setProductRateModal(null)}
+        title={`Rate ${productRateModal?.productName || 'Product'}`}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="form-label">Your Rating</label>
+            <div className="flex gap-2 mt-1">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setRating(s)}
+                  className={`text-2xl transition-transform hover:scale-110 ${
+                    s <= rating ? 'text-yellow-400' : 'text-gray-200'
+                  }`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="form-label">Review (optional)</label>
+            <textarea
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+              rows={3}
+              className="input-field resize-none mt-1"
+              placeholder="Share your experience with this product…"
+            />
+          </div>
+          <button
+            onClick={handleProductRateSubmit}
+            disabled={rating_loading}
+            className="btn-primary w-full"
+          >
+            {rating_loading ? 'Submitting…' : 'Submit Product Rating'}
           </button>
         </div>
       </ModalPopup>

@@ -28,6 +28,8 @@ const productSchema = new mongoose.Schema(
     },
     isAvailable: { type: Boolean, default: true },
     soldCount: { type: Number, default: 0 },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    totalRatings: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

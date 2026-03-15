@@ -84,6 +84,8 @@ export const authAPI = {
 export const productAPI = {
   getAll: (params) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
+  getRatings: (id) => api.get(`/products/${id}/ratings`),
+  rate: (id, data) => api.post(`/products/${id}/rate`, data),
   getFarmerProducts: (farmerId) => api.get(`/products/farmer/${farmerId}`),
   create: (formData) =>
     api.post('/products', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),

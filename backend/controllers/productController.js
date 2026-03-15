@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const ProductRating = require('../models/ProductRating');
 const cloudinary = require('../config/cloudinary');
 
 const hasCloudinaryConfig = () => {
@@ -231,6 +232,74 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const getProductRatings = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).select('_id');
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const ratings = await ProductRating.find({ productId: req.params.id })
+      .populate('customerId', 'name avatar')
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    res.json(ratings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const rateProduct = async (req, res) => {
+  try {
+    const { rating, review, orderId } = req.body;
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
+    const product = await Product.findById(req.params.id).select('farmerId');
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const existing = await ProductRating.findOne({
+      productId: req.params.id,
+      customerId: req.user._id,
+      orderId: orderId || null,
+    });
+
+    if (existing) {
+      existing.rating = Number(rating);
+      existing.review = review || existing.review;
+      await existing.save();
+    } else {
+      await ProductRating.create({
+        productId: req.params.id,
+        farmerId: product.farmerId,
+        customerId: req.user._id,
+        orderId: orderId || null,
+        rating: Number(rating),
+        review: review || '',
+      });
+    }
+
+    const allRatings = await ProductRating.find({ productId: req.params.id }).select('rating');
+    const avg = allRatings.reduce((sum, item) => sum + item.rating, 0) / allRatings.length;
+    const rounded = Math.round(avg * 10) / 10;
+
+    await Product.findByIdAndUpdate(req.params.id, {
+      rating: rounded,
+      totalRatings: allRatings.length,
+    });
+
+    res.json({ message: 'Product rating submitted', averageRating: rounded });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: 'You already rated this product for this order' });
+    }
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid product id' });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createProduct,
   getProducts,
@@ -238,4 +307,6 @@ module.exports = {
   getFarmerProducts,
   updateProduct,
   deleteProduct,
+  getProductRatings,
+  rateProduct,
 };

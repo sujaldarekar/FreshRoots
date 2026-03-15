@@ -33,7 +33,7 @@ export default function ProductDetail({ product: propProduct, embedded = false }
       setLoading(true);
       try {
         const res = await productAPI.getById(productId);
-        setProduct(res.data.data);
+        setProduct(res.data);
       } catch {
         toast.error('Product not found');
       } finally {
@@ -49,7 +49,7 @@ export default function ProductDetail({ product: propProduct, embedded = false }
         const farmerId =
           typeof product.farmerId === 'object' ? product.farmerId._id : product.farmerId;
         const res = await farmerAPI.getProfile(farmerId);
-        setFarmer(res.data.data?.farmer || null);
+        setFarmer(res.data?.farmer || null);
       } catch {}
     })();
   }, [product]);
