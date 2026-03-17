@@ -1,6 +1,8 @@
 const Product = require('../models/Product');
 const ProductRating = require('../models/ProductRating');
 const cloudinary = require('../config/cloudinary');
+const fs = require('fs');
+const path = require('path');
 
 const hasCloudinaryConfig = () => {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
@@ -24,8 +26,60 @@ const uploadToCloudinary = (buffer, folder) =>
     stream.end(buffer);
   });
 
+const toDataUrl = (file) => {
+  if (!file?.buffer || !file?.mimetype) return '';
+  return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+};
+
 const PLACEHOLDER_IMAGE =
   'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80';
+
+const looksLikePlaceholder = (image) => {
+  if (!image) return true;
+  return typeof image === 'string' && image.includes('images.unsplash.com/photo-1540420773420-3366772f4999');
+};
+
+const productNameToFileBase = (name = '') =>
+  String(name)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const findLocalImagePath = (productName) => {
+  const base = productNameToFileBase(productName);
+  if (!base) return '';
+
+  const imagesDir = path.join(__dirname, '..', '..', 'images');
+  const candidates = [
+    `${base}.jpg`,
+    `${base}.jpeg`,
+    `${base}.png`,
+    `${base}.webp`,
+  ];
+
+  for (const fileName of candidates) {
+    const absolute = path.join(imagesDir, fileName);
+    if (fs.existsSync(absolute)) return `/images/${fileName}`;
+  }
+
+  return '';
+};
+
+const withResolvedImage = (productDoc, req) => {
+  const product = productDoc?.toObject ? productDoc.toObject() : { ...productDoc };
+  if (!product) return product;
+
+  if (looksLikePlaceholder(product.image)) {
+    const localPath = findLocalImagePath(product.productName);
+    if (localPath) {
+      const origin = `${req.protocol}://${req.get('host')}`;
+      product.image = `${origin}${localPath}`;
+    }
+  }
+
+  return product;
+};
 
 const createProduct = async (req, res) => {
   try {
@@ -55,7 +109,8 @@ const createProduct = async (req, res) => {
         console.error('Image upload failed, using placeholder image:', uploadError.message);
       }
     } else if (req.file && !hasCloudinaryConfig()) {
-      console.warn('Cloudinary is not configured correctly. Saving product with placeholder image.');
+      imageUrl = toDataUrl(req.file) || PLACEHOLDER_IMAGE;
+      console.warn('Cloudinary is not configured. Saving uploaded image as data URL fallback.');
     }
 
     const product = await Product.create({
@@ -120,7 +175,7 @@ const getProducts = async (req, res) => {
     ]);
 
     res.json({
-      products,
+      products: products.map((p) => withResolvedImage(p, req)),
       total,
       page: Number(page),
       pages: Math.ceil(total / Number(limit)),
@@ -137,7 +192,7 @@ const getProductById = async (req, res) => {
       'name farmName location rating address phone'
     );
     if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.json(product);
+    res.json(withResolvedImage(product, req));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -148,7 +203,7 @@ const getFarmerProducts = async (req, res) => {
     const products = await Product.find({ farmerId: req.params.farmerId }).sort({
       createdAt: -1,
     });
-    res.json(products);
+    res.json(products.map((p) => withResolvedImage(p, req)));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -188,7 +243,9 @@ const updateProduct = async (req, res) => {
         console.error('Image upload failed during update. Keeping previous image:', uploadError.message);
       }
     } else if (req.file && !hasCloudinaryConfig()) {
-      console.warn('Cloudinary is not configured correctly. Keeping existing product image.');
+      imageUrl = toDataUrl(req.file) || product.image;
+      imagePublicId = '';
+      console.warn('Cloudinary is not configured. Updating product with data URL image fallback.');
     }
 
     const updated = await Product.findByIdAndUpdate(

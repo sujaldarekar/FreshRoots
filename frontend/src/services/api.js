@@ -32,7 +32,6 @@ const API_BASE_URL = resolveApiBaseUrl();
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
 });
 
 // Attach JWT token to every request
@@ -40,6 +39,15 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
+
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      // Let browser generate multipart boundary automatically.
+      delete config.headers['Content-Type'];
+      delete config.headers.common?.['Content-Type'];
+      delete config.headers.post?.['Content-Type'];
+      delete config.headers.put?.['Content-Type'];
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -87,10 +95,8 @@ export const productAPI = {
   getRatings: (id) => api.get(`/products/${id}/ratings`),
   rate: (id, data) => api.post(`/products/${id}/rate`, data),
   getFarmerProducts: (farmerId) => api.get(`/products/farmer/${farmerId}`),
-  create: (formData) =>
-    api.post('/products', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id, formData) =>
-    api.put(`/products/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (formData) => api.post('/products', formData),
+  update: (id, formData) => api.put(`/products/${id}`, formData),
   delete: (id) => api.delete(`/products/${id}`),
 };
 

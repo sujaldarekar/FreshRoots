@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const path = require('path');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -39,6 +40,9 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
+
+// Serve workspace-level images (e.g. /images/potato.jpg)
+app.use('/images', express.static(path.join(__dirname, '..', 'images')));
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
