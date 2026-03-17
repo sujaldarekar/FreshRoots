@@ -106,7 +106,9 @@ const createProduct = async (req, res) => {
         imageUrl = result.secure_url;
         imagePublicId = result.public_id;
       } catch (uploadError) {
-        console.error('Image upload failed, using placeholder image:', uploadError.message);
+        imageUrl = toDataUrl(req.file) || PLACEHOLDER_IMAGE;
+        imagePublicId = '';
+        console.error('Image upload to Cloudinary failed, using uploaded file fallback:', uploadError.message);
       }
     } else if (req.file && !hasCloudinaryConfig()) {
       imageUrl = toDataUrl(req.file) || PLACEHOLDER_IMAGE;
@@ -240,7 +242,9 @@ const updateProduct = async (req, res) => {
         imageUrl = result.secure_url;
         imagePublicId = result.public_id;
       } catch (uploadError) {
-        console.error('Image upload failed during update. Keeping previous image:', uploadError.message);
+        imageUrl = toDataUrl(req.file) || product.image;
+        imagePublicId = '';
+        console.error('Image upload to Cloudinary failed during update. Using uploaded file fallback:', uploadError.message);
       }
     } else if (req.file && !hasCloudinaryConfig()) {
       imageUrl = toDataUrl(req.file) || product.image;
